@@ -64,10 +64,3 @@ export function createUser(req,res){
   ) 
 }
 
-export function deleteUser(req,res){
-  User.deleteOne({email : req.body.email}).then(()=>{
-    req.json({
-      message : "student deleted"
-    })
-  })
-};
