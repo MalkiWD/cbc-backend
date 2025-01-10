@@ -53,3 +53,42 @@ export function deleteProduct(req,res){
       })
     })
   }
+
+  export function updateProduct(req,res){
+    if(!isAdmin(req)){
+      res.status(403).json({
+        message: "Please login as administrator to update products"
+      })
+      return
+    }
+  
+    const productId = req.params.productId
+    const newProductData = req.body
+  
+    Product.updateOne(
+      {productId : productId},newProductData
+    ).then(()=>{
+      res.json({
+        message: "Product updated"
+      })
+    }).catch((error)=>{
+        res.status(403).json({
+          message: error
+        })
+      })
+    }
+
+export async function getProductById(req,res) {
+  try{
+    const productId = req.params.productId
+
+  const product = await Product.findOne({productId : productId})
+
+  res.json(product)
+  }catch(e){
+    res.status(500).json({
+      e
+    })
+  }
+  
+}
