@@ -1,6 +1,6 @@
 import Order from "../models/order.js";
 import Product from "../models/product.js";
-import { isCustomer } from "./userController.js";
+import { isAdmin, isCustomer } from "./userController.js";
 
 export async function createOrder(req,res){
 
@@ -11,7 +11,8 @@ export async function createOrder(req,res){
   }
  try{
   const latestOrder = await Order.find().sort
-  ({date : -1}).limit(1)
+  ({orderId : -1}).limit(1)
+  console.log(latestOrder);
 
   let orderId
 
@@ -48,8 +49,8 @@ export async function createOrder(req,res){
 
    newProductArray[i] = {
     name : product.productName,
-    price : product.price,
-    quantity : newOrderData.orderedItems[i].quantity,
+    price : product.lastPrice,
+    quantity : newOrderData.orderedItems[i].qty,
     image : product.images[0]
    }
 
@@ -59,15 +60,16 @@ export async function createOrder(req,res){
   newOrderData.orderedItems = newProductArray
 
   
-  newOrderData.orderId = orderId
-  newOrderData.email = req.user.email
+  newOrderData.orderId = orderId;
+  newOrderData.email = req.user.email;
 
-  const order = new Order(newOrderData)
+  const order = new Order(newOrderData);
 
-  await order.save()
-
+  const savedOrder = await order.save();
+ 
   res.json({
-    message: "Order created"
+    message: "Order created",
+    order : savedOrder
   })
 
 
@@ -80,9 +82,22 @@ export async function createOrder(req,res){
 
 export async function getOrders(req,res) {
   try{
+    if (isCustomer(req)){
     const orders = await Order.find({email : req.user.email})
 
-    res.json(orders)
+    res.json(orders);
+    return;
+    }else if (isAdmin(req)){
+      const orders = await Order.find([]);
+
+      res.json(orders);
+      return;
+    }else{
+      res.json({
+        message: "Please login to view orders"
+      })
+    }
+
 
   }catch(error){
     res.status(500).json({
@@ -115,14 +130,14 @@ export async function getQuote(req,res) {
     return
    }
 
-   labeledTotal += product.price * newOrderData.orderedItems[i].quantity;
-   total += product.lastPrice * newOrderData.orderedItems[i].quantity;
+   labeledTotal += product.price * newOrderData.orderedItems[i].qty;
+   total += product.lastPrice * newOrderData.orderedItems[i].qty;
 
    newProductArray[i] = {
     name : product.productName,
     price : product.lastPrice,
     labeledPrice : product.price,
-    quantity : newOrderData.orderedItems[i].quantity,
+    quantity : newOrderData.orderedItems[i].qty,
     image : product.images[0]
    };
 
